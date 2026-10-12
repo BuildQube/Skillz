@@ -25,6 +25,7 @@ For local development, point at a checkout instead: `/plugin marketplace add /pa
 | Plugin | Category | Description |
 |--------|----------|-------------|
 | [`bq-code`](plugins/bq-code) | development | Coding workflow skills — address PR review feedback and failing CI in any repo |
+| [`bq-orchestrator`](plugins/bq-orchestrator) | development | Run a skein workspace as an orchestrator: plan, launch, refresh, archive, hand off |
 | [`hello-skillz`](plugins/hello-skillz) | examples | Minimal skill + command that prove the install path works |
 
 ## Adding a plugin

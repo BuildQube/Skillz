@@ -19,5 +19,6 @@ This repo is a Claude Code **plugin marketplace**. End users add it once (`/plug
 - New plugins start at `0.1.0`; `scripts/new-plugin.sh` also creates their bump labels (`scripts/plugin-labels.sh <name>` to do it separately).
 - Skill `description` frontmatter says *when* to use the skill (trigger phrases), since that is what Claude matches on.
 - Secrets go through `userConfig` with `"sensitive": true` and are referenced as `${user_config.<key>}` in `.mcp.json` — never commit tokens.
-- Use `${CLAUDE_PLUGIN_ROOT}` to reference scripts bundled inside a plugin.
+- Use `${CLAUDE_PLUGIN_ROOT}` to reference scripts bundled inside a plugin, and `${CLAUDE_SKILL_DIR}` inside a SKILL.md (e.g. `${CLAUDE_SKILL_DIR}/../../references/x.md` for plugin-level references).
+- Plugin `dependencies` in `plugin.json`: same-marketplace plugins by bare name (`"bq-code"`); other marketplaces as `name@marketplace`, and that marketplace must be listed in `allowCrossMarketplaceDependenciesOn` in `marketplace.json`. Don't use version constraints — they resolve against `<plugin>--v<version>` tags, and our release tags are `<plugin>@<version>`.
 - Add new plugins with `/new-plugin` (or `scripts/new-plugin.sh`), then run `scripts/validate.sh`.
