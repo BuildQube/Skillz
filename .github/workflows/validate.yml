@@ -14,4 +14,9 @@ jobs:
         with:
           node-version: 22
       - run: npm install -g @anthropic-ai/claude-code
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3"
+      - run: bun install --frozen-lockfile
+      - run: bun test scripts/
       - run: ./scripts/validate.sh

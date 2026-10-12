@@ -1,0 +1,56 @@
+name: Version bump preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3"
+
+      - run: bun install --frozen-lockfile
+
+      - name: Compute bump preview
+        id: plan
+        env:
+          PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
+        run: |
+          # actions/checkout@v4 on pull_request events checks out a synthetic
+          # merge commit. HEAD^1 = main (kept up-to-date by GitHub), HEAD^2 = PR head.
+          # Diffing HEAD^1..HEAD gives exactly the PR's contribution, robust to
+          # main moving while the PR is open.
+          DIFF=$(git diff --name-only "HEAD^1..HEAD")
+          LABELS=$(echo "$PR_LABELS" | jq -r 'join(",")')
+          MARKDOWN=$(echo "$DIFF" | bun run scripts/bump-plugins.ts --labels "$LABELS" --format markdown)
+          {
+            echo "markdown<<PVB_EOF"
+            echo "$MARKDOWN"
+            echo "PVB_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Find existing preview comment
+        uses: peter-evans/find-comment@v3
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-includes: '<!-- plugin-version-bot -->'
+
+      - name: Create or update preview comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: ${{ steps.plan.outputs.markdown }}
+          edit-mode: replace
