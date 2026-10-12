@@ -26,7 +26,7 @@
       "name": "bq-code",
       "source": "./plugins/bq-code",
       "description": "BuildQube coding workflow — skills for closing out PR review feedback and CI failures in any repo",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "author": {
         "name": "BuildQube"
       },
