@@ -24,6 +24,7 @@ For local development, point at a checkout instead: `/plugin marketplace add /pa
 
 | Plugin | Category | Description |
 |--------|----------|-------------|
+| [`bq-code`](plugins/bq-code) | development | Coding workflow skills — address PR review feedback and failing CI in any repo |
 | [`hello-skillz`](plugins/hello-skillz) | examples | Minimal skill + command that prove the install path works |
 
 ## Adding a plugin
