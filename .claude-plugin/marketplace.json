@@ -12,12 +12,15 @@
       "name": "hello-skillz",
       "source": "./plugins/hello-skillz",
       "description": "Example plugin — a minimal skill and slash command that prove the marketplace install path works",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "author": {
         "name": "BuildQube"
       },
       "category": "examples",
-      "tags": ["example", "starter"]
+      "tags": [
+        "example",
+        "starter"
+      ]
     }
   ]
 }

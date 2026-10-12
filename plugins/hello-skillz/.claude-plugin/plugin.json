@@ -1,6 +1,6 @@
 {
   "name": "hello-skillz",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Example plugin — a minimal skill and slash command that prove the marketplace install path works",
   "author": {
     "name": "BuildQube"
