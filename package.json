@@ -1,0 +1,16 @@
+{
+  "name": "skillz-marketplace",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "bun": ">=1.3.0"
+  },
+  "scripts": {
+    "test": "bun test scripts/",
+    "validate": "./scripts/validate.sh"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.13"
+  }
+}

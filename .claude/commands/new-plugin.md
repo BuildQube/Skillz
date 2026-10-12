@@ -6,10 +6,10 @@ argument-hint: "<plugin-name> [description]"
 Create a new plugin in this marketplace. Arguments: $ARGUMENTS
 
 1. Determine the plugin name (kebab-case) and a one-line description. Ask for the description and a category (e.g. `development`, `operations`, `productivity`, `integration`) if not given.
-2. Run `scripts/new-plugin.sh <name> "<description>" <category>`.
+2. Run `scripts/new-plugin.sh <name> "<description>" <category>`. It also creates the `<name>:patch|minor|major` GitHub labels; report which were created vs. already existed.
 3. Ask what the plugin should do, then replace the template's example skill/command/agent with real ones — rename directories and frontmatter `name` fields to match, and delete component types the plugin doesn't need.
 4. Fill in `tags` in `.claude-plugin/marketplace.json` and update the plugin's README table.
 5. Run `scripts/validate.sh` and fix anything it reports.
 6. Add the plugin to the table in the root `README.md`.
 
-Do not commit.
+Leave `version` at `0.1.0` — after this, versions are bumped automatically on merge. Do not commit.

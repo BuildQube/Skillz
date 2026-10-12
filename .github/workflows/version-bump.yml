@@ -1,0 +1,110 @@
+name: Version bump on merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: version-bump-main
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3"
+
+      - run: bun install --frozen-lockfile
+
+      - name: Compute bump plan
+        id: plan
+        env:
+          PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          MERGE_BASE=$(git merge-base "$BASE_SHA" "$MERGE_SHA")
+          DIFF=$(git diff --name-only "$MERGE_BASE..$MERGE_SHA")
+          LABELS=$(echo "$PR_LABELS" | jq -r 'join(",")')
+          PLAN=$(echo "$DIFF" | bun run scripts/bump-plugins.ts --labels "$LABELS" --format json)
+          echo "plan=$PLAN" >> "$GITHUB_OUTPUT"
+          if [ "$PLAN" = "[]" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Apply bump to JSON files
+        if: steps.plan.outputs.skip == 'false'
+        env:
+          PLAN_JSON: ${{ steps.plan.outputs.plan }}
+        run: echo "$PLAN_JSON" | bun run scripts/apply-bump.ts
+
+      - name: Configure git, commit, tag, and release
+        if: steps.plan.outputs.skip == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PLAN_JSON: ${{ steps.plan.outputs.plan }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add .claude-plugin/marketplace.json
+          echo "$PLAN_JSON" | jq -r '.[] | .source' | while read -r src; do
+            src="${src#./}"
+            src="${src%/}"
+            git add "${src}/.claude-plugin/plugin.json"
+          done
+
+          MSG=$(echo "$PLAN_JSON" | jq -r 'map("\(.pluginName)@\(.newVersion)") | "chore: bump " + join(", ")')
+          git commit -m "$MSG"
+          # Retry push with rebase if main has moved
+          if ! git push origin main; then
+            echo "Push failed, attempting rebase and retry..."
+            git pull --rebase origin main
+            git push origin main
+          fi
+
+          # Tag and release each bumped plugin (idempotent)
+          echo "$PLAN_JSON" | jq -c '.[]' | while read -r row; do
+            NAME=$(echo "$row" | jq -r '.pluginName')
+            VERSION=$(echo "$row" | jq -r '.newVersion')
+            TAG="${NAME}@${VERSION}"
+
+            # Create tag locally if it doesn't exist
+            if ! git rev-parse "$TAG" >/dev/null 2>&1; then
+              git tag "$TAG"
+            fi
+
+            # Push tag (idempotent — pushing an already-pushed tag is a no-op)
+            git push origin "$TAG"
+
+            # Skip release creation if it already exists
+            if gh release view "$TAG" >/dev/null 2>&1; then
+              echo "Release $TAG already exists, skipping"
+            else
+              # Find the previous tag for this plugin (sorted by version, descending)
+              PREV=$(git tag -l "${NAME}@*" --sort=-v:refname | sed -n '2p')
+              if [ -n "$PREV" ]; then
+                gh release create "$TAG" --generate-notes --notes-start-tag "$PREV" --title "$TAG"
+              else
+                gh release create "$TAG" --generate-notes --title "$TAG"
+              fi
+            fi
+          done

@@ -44,6 +44,16 @@ scripts/validate.sh
 
 See [CLAUDE.md](CLAUDE.md) for layout and conventions.
 
+## Versioning
+
+Versions bump automatically when a PR merges to `main`:
+
+- Any plugin with changed files gets a **patch** bump by default.
+- Add a PR label `<plugin-name>:minor` or `<plugin-name>:major` to override.
+- A bot comment on each PR previews the bumps; on merge the workflow commits the new versions and creates a `<plugin>@<version>` tag and GitHub release.
+
+Run the versioning tests locally with `bun install && bun test scripts/`.
+
 ## Repository structure
 
 ```
@@ -52,7 +62,7 @@ See [CLAUDE.md](CLAUDE.md) for layout and conventions.
 ├── plugins/                          # one directory per plugin
 │   └── hello-skillz/
 ├── templates/plugin/                 # scaffold copied by new-plugin.sh
-├── scripts/                          # new-plugin.sh, validate.sh
+├── scripts/                          # new-plugin.sh, validate.sh, auto-versioning (Bun)
 ├── .claude/commands/new-plugin.md    # /new-plugin for contributors
-└── .github/workflows/validate.yml    # CI validation
+└── .github/workflows/               # validate, version-preview, version-bump
 ```

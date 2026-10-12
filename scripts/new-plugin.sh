@@ -37,4 +37,10 @@ jq --arg n "$name" --arg d "$desc" --arg c "$category" \
   "$manifest" > "$tmp" && mv "$tmp" "$manifest"
 
 echo "Created plugins/$name and registered it in marketplace.json."
+
+if command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
+  "$root/scripts/plugin-labels.sh" "$name"
+else
+  echo "gh not available — run scripts/plugin-labels.sh $name later to create its version-bump PR labels."
+fi
 echo "Next: edit the template components, delete the ones you don't need, then run scripts/validate.sh"
