@@ -1,0 +1,8 @@
+{
+  "name": "bq-code",
+  "version": "0.1.0",
+  "description": "BuildQube coding workflow — skills for closing out PR review feedback and CI failures in any repo",
+  "author": {
+    "name": "BuildQube"
+  }
+}
