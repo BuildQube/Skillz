@@ -1,0 +1,6 @@
+.DS_Store
+node_modules/
+.claude/*
+!.claude/commands/
+settings.local.json
+tmp/

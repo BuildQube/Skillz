@@ -1,0 +1,23 @@
+{
+  "name": "skillz",
+  "owner": {
+    "name": "BuildQube",
+    "email": "alex@buildqube.com"
+  },
+  "metadata": {
+    "description": "BuildQube plugin marketplace — installable skills, commands, agents, and MCP integrations for Claude Code"
+  },
+  "plugins": [
+    {
+      "name": "hello-skillz",
+      "source": "./plugins/hello-skillz",
+      "description": "Example plugin — a minimal skill and slash command that prove the marketplace install path works",
+      "version": "0.1.0",
+      "author": {
+        "name": "BuildQube"
+      },
+      "category": "examples",
+      "tags": ["example", "starter"]
+    }
+  ]
+}
