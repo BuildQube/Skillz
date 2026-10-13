@@ -11,6 +11,7 @@ Turn this worktree into a bq-orchestrator workspace. Shared references:
 - Trackers: `${CLAUDE_SKILL_DIR}/../../references/trackers.md`
 - Prompt layers: `${CLAUDE_SKILL_DIR}/../../references/workspace-prompt.md`
 - Role: `${CLAUDE_SKILL_DIR}/../../references/orchestrator-role.md`
+- Config: `${CLAUDE_SKILL_DIR}/../../references/config.md`
 
 Read the plan format before writing anything.
 
@@ -21,13 +22,13 @@ Read the plan format before writing anything.
 
 ## 2. Plan file
 
-**If `execution-plan.md` exists without front matter** (a pre-plugin plan): migrate it. Infer as much front matter as you can from the body (title, started date, sprint/epics, skein project id from any `skein new --project …` line, deadline, Airtable base/table from links, assignee ids mentioned, predecessor). Ask only for what's missing and required: `skein_project` and the default `tracker`. Add a `State` column to the workspace table, inferred from inline markers (✅ merged #N, 🚧 PR #N, launched …). Don't rewrite the rest of the document.
+**If `execution-plan.md` exists without front matter** (a pre-plugin plan): migrate it. Infer as much front matter as you can from the body (title, started date, sprint/epics, skein project id from any `skein new --project …` line, deadline, Airtable base/table from links, assignee ids mentioned, predecessor). Fill gaps from the domain file (config.md). Ask only for what's still missing and required: `skein_project` and the default `tracker`. Add a `State` column to the workspace table, inferred from inline markers (✅ merged #N, 🚧 PR #N, launched …). Don't rewrite the rest of the document.
 
 **If it exists with `orchestrator: bq-orchestrator`**: it's already enabled — say so, skip to step 4.
 
 **If it doesn't exist**: scaffold it.
-1. Gather the header. Resolve `skein_project` via `skein projects --json` (match the repo; ask if ambiguous). Ask for the default tracker and assignee if they can't be inferred — offer `none` as a valid tracker. For Airtable, ask for base/table/fields once; they'll be reused by every launch.
-2. If the user gave a source ($ARGUMENTS — a Slack thread, a findings file, an epic, a list of issue ids): read it and propose the Workspaces table — group issues into workspaces by seam, set priorities and dependencies, and write the Collisions / ordering section. Pick WS labels that are unique across sibling orchestrator plans (`git worktree list`, then each worktree's `execution-plan.md` front matter): continue after the highest label in use.
+1. Gather the header. Resolve `skein_project` via `skein projects --json` (match the repo; ask if ambiguous). Take that project's `domain` and read `~/.claude/bq-orchestrator/<domain>.yml` if it exists. Seed the front matter from it (tracker, assignee, tracker settings, `review:`), and leave out the per-sprint values the user should set fresh, such as a sprint or cycle in `on_launch`. Ask only for what is still missing: the default tracker (offer `none`) and the assignee. For Airtable without a domain file, ask for base/table/fields once, and offer to save them to the domain file so the next plan in this domain starts from them.
+2. If the user gave a source ($ARGUMENTS — a Slack thread, a findings file, an epic, a list of issue ids): read it and propose the Workspaces table — group issues into workspaces by seam, set priorities and dependencies, and write the Collisions / ordering section. WS labels only need to be unique within this plan (a successor continues its predecessor's sequence). Skip any label where `<label><digits>` would match `airtable.issue_pattern`.
 3. Otherwise write the skeleton with an empty Workspaces table.
 4. Write `execution-plan.md` at the worktree root. Add a `## Log` entry for today.
 
@@ -45,4 +46,4 @@ Read `orchestrator-role.md` and follow it for the rest of this session. (The plu
 
 ## 5. Report
 
-Short: plan path (created / migrated / already enabled), the header values, the workspaces proposed (if any), which addendum will be used, and the next step — usually "review the plan, then `/bq-orchestrator:launch <WS>`".
+Short: plan path (created / migrated / already enabled), the header values and which came from the domain file, the workspaces proposed (if any), which addendum will be used, and the next step — usually "review the plan, then `/bq-orchestrator:launch <WS>`".

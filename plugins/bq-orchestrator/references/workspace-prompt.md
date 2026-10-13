@@ -12,6 +12,8 @@
 
    If none exists, omit the layer and mention it in the launch report.
 
+   **The addendum can replace a default layer.** If it has a `## Quality bar` heading, that section (up to the next `## ` heading) is used as layer 2 in place of the default block. A `## Landing the work` heading does the same for layer 3. Headings match case-insensitively. Whatever remains of the addendum becomes layer 4 as usual. Use this when a repo's conventions conflict with a default, so the workspace never receives both versions.
+
 ## 1. Task (template)
 
 ```
@@ -40,6 +42,7 @@ Keep it tight. The workspace agent can read the issue itself; give it the decisi
 
 ```
 QUALITY BAR:
+- Read each linked issue in full first; treat findings in it as claims to verify against current code, not facts.
 - Work in ponytail mode: run /ponytail:ponytail first. Smallest change that actually works, at the right altitude. No speculative abstraction, no interface with one implementation, no config for a value that never changes.
 - DRY, hard. Before writing anything, look for the helper, type, or pattern that already exists and reuse it. A second copy of logic that lives a few files over is the failure mode we care most about. If two call sites need the same rule, extract it once.
 - Beneficial tests wherever applicable: a test that fails if the logic breaks, not one that restates it. Mutation-check it — revert the fix and confirm that exact test goes red. Pick the test lane that can actually observe the claim.
@@ -61,4 +64,4 @@ LANDING THE WORK:
 
 ## 4. Repo addendum
 
-Verbatim, prefixed with `REPO CONVENTIONS:` if the file doesn't already start with a heading. Typical content: commit message format, PR title format (e.g. a required issue-id suffix and why it matters), PR body template sections, labels to avoid, required local gates. It should *not* repeat the review loop — layer 3 owns that.
+Verbatim (minus any section that replaced layer 2 or 3), prefixed with `REPO CONVENTIONS:` if it doesn't already start with a heading. Typical content: commit message format, PR title format (e.g. a required issue-id suffix and why it matters), PR body template sections, labels to avoid, required local gates. It should *not* repeat the review loop, because layer 3 owns that. To change the loop, replace layer 3 with a `## Landing the work` section.

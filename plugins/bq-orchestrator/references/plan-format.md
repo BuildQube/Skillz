@@ -7,32 +7,34 @@ The orchestrator's single source of truth. It lives **untracked** at the orchest
 ```yaml
 ---
 orchestrator: bq-orchestrator          # marks this worktree as an orchestrator (the SessionStart hook keys off it)
-title: WO-screen parity
+title: Checkout redesign
 started: 2026-10-12
 status: active                          # active | superseded | done
-predecessor: affable-pickle             # optional — orchestrator worktree this continues from
+predecessor: prior-worktree             # optional — orchestrator worktree this continues from
 successor:                              # set by handoff
-skein_project: 019e8900-0181-7c10-b7e5-1f6f1d69258e
+skein_project: 01234567-89ab-cdef-0123-456789abcdef
 base_branch: main
 deadline: 2026-10-20                    # optional
 tracker: airtable                       # default for ids that don't self-identify: airtable | github | linear | none
 assignee:                               # who to assign at START (see trackers.md)
-  airtable: usr0wk10z5dUQkYHQ
+  airtable: usrXXXXXXXXXXXXXX
   github: "@me"
   linear: me
 airtable:                               # only when tracker or any row uses airtable
-  base: appBNNrccYY9bXOTU
-  table: tblpJStOrnv8SQRoG
+  base: appXXXXXXXXXXXXXX
+  table: tblXXXXXXXXXXXXXX
   assignee_field: Assignee
-  issue_id_field: Issue ID              # field holding the user-facing id (O####)
-  issue_pattern: "^O[0-9]{3,5}$"
-sprint: S26.33 Eggplant rec75YQ6CztUgsnVI   # optional free text
-epics:                                   # optional free text list
-  - Aldoa Monorepo Migration rec7b9miuAurnOEIq
+  issue_id_field: Issue ID              # field holding the user-facing id (T####)
+  issue_pattern: "^T[0-9]{3,5}$"
+  on_launch:                            # set with the assignee at START; sprint ids live here, per plan
+    Sprint: [recXXXXXXXXXXXXXX]
+sprint: Sprint 12                       # optional free text
+epics:                                  # optional free text list
+  - Checkout v2
 ---
 ```
 
-Unknown keys are fine — keep anything the user adds.
+Most of these keys can come from the domain file `~/.claude/bq-orchestrator/<domain>.yml` instead. Front matter wins over the domain file, which wins over the plugin defaults. See [config.md](config.md) for the full schema, including `review:` and each tracker's `on_launch`. Unknown keys are fine. Keep anything the user adds.
 
 ## Body sections
 
@@ -50,8 +52,8 @@ Keep these headings so the skills can find them. Everything else is free-form.
 
 | WS | Issues | Pri | Depends on | Seam | State |
 |---|---|---|---|---|---|
-| **I** | O5326 `formHref` + selected form in URL | P1 | — | `AddNewFormModal`, `WorkOrderScreen` | proposed |
-| **J** | O5330 copy form + O5333 skip/restore offline | P2 | I | `RequiredFormsList`, `OFFLINE_MUTATIONS` | 🚧 launched 2026-10-12 · ws `w_abc` |
+| **I** | T5326 `cartUrl` + selected step in URL | P1 | — | `CartModal`, `CheckoutScreen` | proposed |
+| **J** | T5330 copy cart + T5333 offline restore | P2 | I | `CartList`, `OFFLINE_QUEUE` | 🚧 launched 2026-10-12 · ws `w_abc` · session `j-cart-copy-3f` |
 | **K** | #412 quick-access menu | P2 | I | new menu container | 🔀 PR #380 · checks green · 2 threads open |
 | **L** | — lookup drawers (no ticket; details below) | P2 | K | new server procedure | ✅ merged #381 (2026-10-14) · archived |
 
@@ -59,8 +61,8 @@ Keep these headings so the skills can find them. Everything else is free-form.
 <implementation details for rows with no ticket, or extra notes a prompt must carry>
 
 ## Collisions / ordering
-- I first: J, K, L consume `formHref`.
-- M and N both edit the WO action bar — run serially or name each other in prompts.
+- I first: J, K, L consume `cartUrl`.
+- M and N both edit the checkout action bar — run serially or name each other in prompts.
 
 ## Backlog
 <filed, not launched>
@@ -71,10 +73,12 @@ Keep these headings so the skills can find them. Everything else is free-form.
 
 ### The Workspaces table
 
-- **WS** — a short letter/label, **unique across all orchestrator plans for this repo** (check sibling worktrees' plans before picking; continue the predecessor's sequence). Bold it.
-- **Issues** — zero or more ids, each self-identifying when possible (`O5326`, `#412`, `owner/repo#12`, `ENG-42`, or a URL), then a short summary. `—` for no ticket; put the details in a `### <WS> — …` subsection.
+- **WS** — a short letter/label, **unique within this plan** (a successor continues its predecessor's sequence). Bold it. Skip a label that would read as a tracker id: if `<label><digits>` matches `airtable.issue_pattern`, don't use it (with `^T[0-9]+$`, skip `T`).
+- **Issues** — zero or more ids, each self-identifying when possible (`T5326`, `#412`, `owner/repo#12`, `ENG-42`, or a URL), then a short summary. `—` for no ticket; put the details in a `### <WS> — …` subsection.
 - **State** — lifecycle, updated by the skills:
   `proposed` → `🚧 launched <date> · ws <id>` → `🔀 PR #N · <checks> · <threads>` → `✅ merged #N (<date>)` → `… · archived`. Also `⏸ blocked: <why>` and `✖ dropped: <why>`.
+  - `· session <name>` is appended by `message` after its first successful send, so later sends go straight to that session. Keep it through later State changes.
+  - `in flight · owned by <old plan>` marks a row carried over by `handoff` (`<old plan>` is the predecessor's worktree name) that still belongs to the predecessor's workspace. `refresh` tracks it like any other row (it becomes `🔀 PR …`, then `✅ merged …`, keeping the `owned by` note); `launch` never launches it.
 
 ### Workspace-specific prompt notes
 
