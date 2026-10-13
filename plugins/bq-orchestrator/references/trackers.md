@@ -30,6 +30,8 @@ Use the record id directly when the id is an Airtable URL. Otherwise:
 
 Zero or several matches → don't guess. Report the id as "not found" or "ambiguous".
 
+The reverse, building the human id of a record `file` just created, uses `airtable.issue_format` (config.md).
+
 ## Assign at START
 
 Assign the issue to the plan's assignee *before* launching the workspace, not at PR time — an unassigned in-progress issue is invisible in the views the team reads. In the same update, set the fields in that tracker's `on_launch` map. Skip for `none`.

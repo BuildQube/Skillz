@@ -20,6 +20,7 @@ Dependencies are installed with it: `bq-code` (this marketplace), `skein@skein-m
 | `/bq-orchestrator:refresh` | Merge `origin/<base>`, then report GitHub, tracker and skein state against the plan, and update the State column. |
 | `/bq-orchestrator:message <WS…> <text>` | Send a finding or decision to the Claude session running in a launched workspace (it resolves the workspace to its local session). It can broadcast to every workspace on a seam, and when no session is live it falls back to text you can paste. Each send is logged in the plan. |
 | `/bq-orchestrator:review [WS…\|all-open] [merge]` | Check PR status, then review each diff against its plan row in two passes: a correctness agent (`/code-review` by default) and `/ponytail:ponytail-review`. It ranks the findings, asks you which to send (by default), and sends those to the workspace instead of fixing them. It also warns about expected reviewers that never posted and about files shared with open PRs outside the plan. It merges PRs that pass every check, in dependency order, but only when your request says to merge. |
+| `/bq-orchestrator:file [summary\|from <PR/finding/WS>]` | File follow-up tickets (deferred review findings, gaps found while scoping). It drafts each one with problem, evidence, fix and tests, applies your domain's `file:` defaults and rules, flags likely duplicates, creates them after you approve, and adds them to the plan's Backlog. |
 | `/bq-orchestrator:archive [WS…]` | Archive the skein workspaces whose PRs merged. Never uses `--force`. |
 | `/bq-orchestrator:handoff [worktree]` | Carry a finished round's open items into a successor plan, and link the two. In-flight rows carry over as tracked rows owned by the old plan, so they are never re-launched. |
 
@@ -60,6 +61,7 @@ airtable:
   issue_id_field: Issue ID
   issue_pattern: "^T([0-9]{3,5})$"     # capture group feeds issue_lookup
   issue_lookup: "{Ticket Number}={1}"  # T5174 → filterByFormula {Ticket Number}=5174
+  issue_format: "T{Ticket Number}"     # the reverse: a filed record's id, e.g. T5174
   on_launch:
     Status: In Progress                # the sprint id goes in each plan's front matter
 launch:
@@ -68,4 +70,23 @@ review:
   correctness_agent: /code-review      # or an agent type such as some-plugin:some-reviewer
   findings: ask                        # ask | auto
   expected_reviewers: [claude]
+file:                                  # how /bq-orchestrator:file creates tickets
+  assign: false                        # assigned at launch instead
+  defaults:
+    Status: Backlog
+  always:
+    Epics: [recEPIC1]                  # list fields union with rule additions
+  rules:
+    - when: the ticket affects the mobile app
+      add: { Epics: [recEPIC2] }
+    - when: it is a security or data-loss bug
+      add: { Priority: P0 }
+  fields:
+    title: Name
+    description: Description
+    type: { field: Type, values: [Bug, Task, Feature] }
+    priority: { field: Priority, values: [P0, P1, P2, P3] }
+    size: { field: Size, values: ["1", "2", "3", "5", "8"] }
 ```
+
+GitHub and Linear samples for `file:` are in config.md.
