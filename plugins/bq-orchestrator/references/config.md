@@ -34,6 +34,8 @@ airtable:
   issue_id_field: Issue ID    # the field holding the human id, compared for equality when issue_lookup is absent
   issue_pattern: "^T([0-9]{3,5})$"   # ids matching this are Airtable ids; capture groups feed issue_lookup
   issue_lookup: "{Ticket Number}={1}" # optional filterByFormula template; {1}, {2}… are capture groups
+  issue_format: "T{Ticket Number}"    # optional: builds a created record's human id; {Field} reads that field (the inverse of issue_lookup)
+  record_url: "https://airtable.com/{base}/{table}/{record}"   # link to a record, used in the plan and reports
   on_launch:                  # fields set together with the assignee at START (field name → value)
     Status: In Progress
     # Sprint: [recXXXXXXXXXXXXXX]   # usually in the plan, since it changes each sprint
@@ -55,9 +57,28 @@ review:
   correctness_agent: /code-review   # or an agent type, e.g. some-plugin:some-reviewer
   findings: ask                     # ask | auto
   expected_reviewers: []            # logins that must post on each PR's head commit, e.g. [claude]
+
+file:                               # how /bq-orchestrator:file creates tickets
+  tracker: airtable                 # default: the plan's tracker
+  assign: false                     # default false: assignment happens at launch (assign at START)
+  defaults:                         # field → value on every ticket (tracker-native field names)
+    Status: Backlog
+  always:                           # added to every ticket; list fields are UNIONED, not replaced
+    Epics: [recEPIC1]
+  rules:                            # plain-English `when`, judged by the skill against the draft
+    - when: the ticket affects the mobile app
+      add: { Epics: [recEPIC2] }
+    - when: it is a security or data-loss bug
+      add: { Priority: P0 }
+  fields:                           # how the draft maps onto this tracker's fields
+    title: Name
+    description: Description
+    type: { field: Type, values: [Bug, Task, Feature] }
+    priority: { field: Priority, values: [P0, P1, P2, P3] }
+    size: { field: Size, values: ["1", "2", "3", "5", "8"] }   # omit when the tracker has none
 ```
 
-Unknown keys are kept and ignored. Later skills add their own top-level section (a ticket-filing skill would add `file:`) without moving any of these keys.
+Unknown keys are kept and ignored. Later skills add their own top-level section without moving any of these keys.
 
 ## Defaults
 
@@ -67,10 +88,17 @@ Unknown keys are kept and ignored. Later skills add their own top-level section 
 | `base_branch` | the repo's default branch |
 | `<tracker>.on_launch` | `{}`, so only the assignee is set |
 | `airtable.issue_lookup` | absent: match `issue_id_field` equal to the id |
+| `airtable.issue_format` | absent: a filed record's id is its record id (`rec…`) |
+| `airtable.record_url` | `https://airtable.com/{base}/{table}/{record}` |
 | `launch.submit` | `false`, so prompts are staged unsent |
 | `review.correctness_agent` | `/code-review` |
 | `review.findings` | `ask` |
 | `review.expected_reviewers` | `[]` |
+| `file.tracker` | the plan's `tracker` |
+| `file.assign` | `false` |
+| `file.defaults`, `file.always` | `{}` |
+| `file.rules` | `[]` |
+| `file.fields` | absent: ask for the field names on first use, and suggest saving them to the domain file |
 
 ## Keys in detail
 
@@ -80,3 +108,62 @@ Unknown keys are kept and ignored. Later skills add their own top-level section 
 - **`review.correctness_agent`**: the bug-hunting pass in `review`. `/code-review` is the built-in skill. Any other value is an agent type run with the Agent tool. `review` gives it the plan row, the plan's Context and the previous round's findings.
 - **`review.findings`**: `ask` shows you the ranked findings and a recommended fix list and sends only what you approve. `auto` sends blocking and non-blocking findings to the workspace without asking.
 - **`review.expected_reviewers`**: after checks finish, `review` warns when one of these logins posted nothing on the PR's head commit. That catches a review bot that silently skipped a PR.
+- **`airtable.issue_format`**: after `file` creates a record, it reads the record back and fills this template. `{Field}` is that field's value on the created record, so `"T{Ticket Number}"` turns autonumber `5174` into `T5174`. Without it, the id is the record id. Keep it consistent with `issue_pattern` so `launch` and `refresh` can find the ticket again.
+- **`airtable.record_url`**: the link written to the plan and reports. `{base}`, `{table}` and `{record}` are `airtable.base`, `airtable.table` and the record id.
+
+### `file`
+
+- **`file.tracker`**: where `file` creates tickets. Defaults to the plan's `tracker`.
+- **`file.assign`**: `true` assigns each new ticket to `assignee.<tracker>` on creation. Leave it `false` when tickets are assigned at launch (see "Assign at START" in trackers.md).
+- **`file.defaults`**: tracker field → value, set on every ticket unless the draft or a rule sets that field.
+- **`file.always`**: tracker field → value, added to every ticket.
+- **`file.rules`**: a list of `{ when, add }`. `when` is plain English. `file` judges it against each draft and shows, per draft, which rules matched and why, so a wrong judgment is easy to catch. `add` is a field → value map, like `always`.
+- **`file.fields`**: maps the draft (`title`, `description`, `type`, `priority`, `size`) onto the tracker. A plain string is the field name. A map has `field`, optional `values` (the allowed values, which the skill picks from) and optional `prefix` (prepended to the value). `field: label` adds the value to the ticket's labels instead of setting a field. Omit `size` when the tracker has no size field.
+
+**How a ticket's fields merge.** Across layers, `file:` merges like every other key: plan > domain > defaults, maps key by key, and a list (including `rules` and a list value inside `always`) replaced whole by the higher layer. Inside one ticket, the fields are built in this order:
+
+1. `file.defaults`;
+2. the draft's own values (title, type, priority, size, description), through `file.fields`;
+3. `file.always`;
+4. each matching rule's `add`, in list order.
+
+In steps 3 and 4, list fields are **unioned** with what's already there (duplicates dropped) and scalars are **overridden**, so a later rule wins over an earlier one for the same scalar. The user's edits at approval override everything.
+
+**GitHub.** Title and description are the issue's own; `fields` maps the rest onto labels, milestone and project. Type and priority are usually labels:
+
+```yaml
+file:
+  tracker: github
+  defaults:
+    milestone: Backlog
+  always:
+    labels: [follow-up]
+  rules:
+    - when: the ticket affects the mobile app
+      add: { labels: [mobile] }
+  fields:
+    type: { field: label, values: [bug, task, feature] }
+    priority: { field: label, prefix: "priority:", values: [p0, p1, p2, p3] }
+    size: { field: label, prefix: "size:", values: [s, m, l] }
+```
+
+Field names are `labels` (a list), `milestone` and `project`, which become `gh issue create` flags.
+
+**Linear.** Title and description are the issue's own; `fields` maps the rest onto team, project, labels, priority, estimate and state:
+
+```yaml
+file:
+  tracker: linear
+  defaults:
+    team: ENG
+    state: Backlog
+  always:
+    labels: [follow-up]
+  rules:
+    - when: the ticket affects the mobile app
+      add: { project: Mobile App }
+  fields:
+    type: { field: label, values: [Bug, Improvement, Feature] }
+    priority: { field: priority, values: [Urgent, High, Medium, Low] }
+    size: { field: estimate, values: [1, 2, 3, 5, 8] }
+```
