@@ -45,15 +45,16 @@ Show the user the Task layer (the part that varies) for each workspace and proce
 ## 4. Create the workspace
 
 ```bash
-skein new --project <skein_project> --issue '<primary id>' [--issue '<extra id>' ...] --prompt "$(cat .orchestrator/prompts/<WS>.md)"
+skein new --project <skein_project> --issue '<primary id>' [--issue '<extra id>' ...] --prompt "$(cat .orchestrator/prompts/<WS>.md)" [--submit]
 ```
 
+- `--submit` only when `launch.submit` is true (config.md; needs skein ≥ 0.6.0).
 - The first `--issue` is the primary (names the branch). Order the row's ids by priority.
 - No ids → `--name "<WS> <short summary>"` instead of `--issue`.
 - Stacked on an unmerged dependency → follow skein's stacking recipe (create the branch off the dependency's branch, `skein new --branch <new> --force`) and say "base your PR on <branch>" in the Task layer.
 - On a collision or any error, follow `/skein:skein-new`'s recovery rules — relay the message; `--force` only for the archived-workspace and existing-branch cases. Never blindly re-run.
 
-The prompt is staged **unsent** in the new workspace's terminal. Never claim the workspace has started working.
+Without `--submit`, the prompt is staged **unsent** in the new workspace's terminal. With it, skein sends the prompt once claude is ready. Either way, never claim the workspace has started working.
 
 ## 5. Update the plan
 
@@ -61,4 +62,4 @@ Set the row's State to `🚧 launched <date> · ws <id>` and add a `## Log` line
 
 ## 6. Report
 
-Per workspace: WS, issue(s), workspace id, assignment and `on_launch` result, addendum used (and any layer it replaced). Then: "Prompts are staged unsent — open each workspace in Skein and press Enter." Plus any manual follow-ups (failed assignments).
+Per workspace: WS, issue(s), workspace id, assignment and `on_launch` result, addendum used (and any layer it replaced). Then, when `launch.submit` is false: "Prompts are staged unsent — open each workspace in Skein and press Enter." When true: "Prompts will be sent once claude is ready in each workspace (if claude's prompt isn't detected, they stay staged; open the workspace and press Enter)." Plus any manual follow-ups (failed assignments).

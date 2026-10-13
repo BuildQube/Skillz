@@ -48,6 +48,9 @@ linear:
     state: In Progress
     # cycle: <cycle id or number>   # usually in the plan
 
+launch:
+  submit: false                     # true passes --submit to skein new (needs skein >= 0.6.0)
+
 review:
   correctness_agent: /code-review   # or an agent type, e.g. some-plugin:some-reviewer
   findings: ask                     # ask | auto
@@ -64,6 +67,7 @@ Unknown keys are kept and ignored. Later skills add their own top-level section 
 | `base_branch` | the repo's default branch |
 | `<tracker>.on_launch` | `{}`, so only the assignee is set |
 | `airtable.issue_lookup` | absent: match `issue_id_field` equal to the id |
+| `launch.submit` | `false`, so prompts are staged unsent |
 | `review.correctness_agent` | `/code-review` |
 | `review.findings` | `ask` |
 | `review.expected_reviewers` | `[]` |
@@ -72,6 +76,7 @@ Unknown keys are kept and ignored. Later skills add their own top-level section 
 
 - **`<tracker>.on_launch`**: see "Assign at START" in trackers.md. A sprint or cycle can move after launch (re-planning, carry-over). `refresh` reports one that differs from the plan's as information and never changes it back.
 - **`airtable.issue_pattern` / `issue_lookup`**: see "Finding a record" in trackers.md.
+- **`launch.submit`**: `true` makes `launch` (and `handoff`'s successor suggestion) pass `--submit` to `skein new`, so the prompt is sent once claude is ready in the workspace instead of being staged unsent. If skein doesn't detect claude's prompt, it stays staged. Needs skein ≥ 0.6.0.
 - **`review.correctness_agent`**: the bug-hunting pass in `review`. `/code-review` is the built-in skill. Any other value is an agent type run with the Agent tool. `review` gives it the plan row, the plan's Context and the previous round's findings.
 - **`review.findings`**: `ask` shows you the ranked findings and a recommended fix list and sends only what you approve. `auto` sends blocking and non-blocking findings to the workspace without asking.
 - **`review.expected_reviewers`**: after checks finish, `review` warns when one of these logins posted nothing on the PR's head commit. That catches a review bot that silently skipped a PR.

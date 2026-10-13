@@ -35,7 +35,7 @@ If the successor worktree has no `execution-plan.md`: write one per plan-format.
 - Not-started rows (`proposed`, `⏸ blocked`) carry with their State and `### <WS>` notes as they are. The successor launches them.
 - In-flight rows (launched or in PR) carry with State `in flight · owned by <old plan>` (`<old plan>` = the old orchestrator's worktree name), keeping the `ws <id>`, `PR #N` and `· session <name>` parts. The successor's `refresh` tracks them to merge, and its `launch` refuses them. If the successor already has a plan, merge the carry-over into it without duplicating rows (match on issue ids).
 
-If the successor worktree doesn't exist yet, offer to create it as a skein workspace: `skein new --project <skein_project> --name "<next round title>" --prompt "/bq-orchestrator:handoff <old worktree>"` — then the user runs that prompt there (incoming direction).
+If the successor worktree doesn't exist yet, offer to create it as a skein workspace: `skein new --project <skein_project> --name "<next round title>" --prompt "/bq-orchestrator:handoff <old worktree>"` (plus `--submit` when `launch.submit` is true) — then that prompt runs there (the user presses Enter, or skein sends it with `--submit`), in the incoming direction.
 
 ## 5. Close the old plan
 

@@ -62,6 +62,8 @@ airtable:
   issue_lookup: "{Ticket Number}={1}"  # T5174 → filterByFormula {Ticket Number}=5174
   on_launch:
     Status: In Progress                # the sprint id goes in each plan's front matter
+launch:
+  submit: false                        # true sends prompts once claude is ready (skein >= 0.6.0)
 review:
   correctness_agent: /code-review      # or an agent type such as some-plugin:some-reviewer
   findings: ask                        # ask | auto
