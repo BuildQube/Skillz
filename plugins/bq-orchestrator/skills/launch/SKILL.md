@@ -1,6 +1,6 @@
 ---
 name: launch
-description: Use in an orchestrator workspace when the user wants to start work on one or more planned workspaces — "launch I", "kick off workspace J and K", "start O5326", "spin up the next one", "launch everything that's unblocked". Assigns the issue at start, builds the standard layered prompt (task + quality bar + landing loop + repo addendum), creates the skein workspace, and updates execution-plan.md.
+description: Use in an orchestrator workspace when the user wants to start work on one or more planned workspaces — "launch I", "kick off workspace J and K", "start T5326", "spin up the next one", "launch everything that's unblocked". Assigns the issue at start, builds the standard layered prompt (task + quality bar + landing loop + repo addendum), creates the skein workspace, and updates execution-plan.md.
 argument-hint: "<WS label(s) | issue id(s) | next>"
 ---
 
@@ -10,6 +10,7 @@ Start implementer workspaces from rows of `execution-plan.md`. References:
 - Plan format: `${CLAUDE_SKILL_DIR}/../../references/plan-format.md`
 - Trackers: `${CLAUDE_SKILL_DIR}/../../references/trackers.md`
 - Prompt layers: `${CLAUDE_SKILL_DIR}/../../references/workspace-prompt.md`
+- Config (front matter > domain file > defaults): `${CLAUDE_SKILL_DIR}/../../references/config.md`
 
 If there's no `execution-plan.md` with `orchestrator: bq-orchestrator` front matter, stop and suggest `/bq-orchestrator:enable-orchestrator`.
 
@@ -21,21 +22,21 @@ From `$ARGUMENTS`:
 - `next` or empty → rows in `proposed` state whose dependencies are merged (or launched, when the plan says they can run in parallel), highest priority first. Show the pick and confirm.
 
 For each picked row, refuse and explain if:
-- it's already `🚧 launched` / `🔀 PR` / `✅ merged` (check `skein list --project <skein_project> --json` too — a live workspace on the issue means it's already running);
+- it's already `🚧 launched` / `🔀 PR` / `✅ merged`, or `in flight · owned by <old plan>` (a predecessor's workspace owns it) (check `skein list --project <skein_project> --json` too — a live workspace on the issue means it's already running);
 - a dependency hasn't landed and the plan doesn't say it can run in parallel — offer to launch anyway with the dependency named in the prompt;
 - a Collisions bullet says it must run serially with an in-flight workspace.
 
 ## 2. Assign at start
 
-For each issue id on the row, detect its tracker and assign it per trackers.md. Do this **before** creating the workspace. Failures don't block — collect them for the report.
+For each issue id on the row, detect its tracker, then assign it and set the tracker's `on_launch` fields per trackers.md. Do this **before** creating the workspace. Failures don't block — collect them for the report.
 
 ## 3. Build the prompt
 
 Assemble the four layers from workspace-prompt.md:
 1. **Task** — fill the template from the row, the `Context` section, the row's `### <WS> — …` notes, the relevant Collisions bullets, and the live state of dependencies and neighbors. Fetch each issue's title (and a one-paragraph gist of its description) from its tracker so the prompt isn't just ids.
-2. **Quality bar** — verbatim.
-3. **Landing the work** — verbatim.
-4. **Repo addendum** — first that exists, verbatim.
+2. **Quality bar**: verbatim, unless the addendum has a `## Quality bar` section, which replaces it.
+3. **Landing the work**: verbatim, unless the addendum has a `## Landing the work` section, which replaces it.
+4. **Repo addendum**: the first that exists, verbatim, minus any section used in 2 or 3.
 
 Write the result to `.orchestrator/prompts/<WS>.md` in this worktree (create the directory; it's untracked, like the plan). This is the record of exactly what the workspace was told.
 
@@ -60,4 +61,4 @@ Set the row's State to `🚧 launched <date> · ws <id>` and add a `## Log` line
 
 ## 6. Report
 
-Per workspace: WS, issue(s), workspace id, assignment result, addendum used. Then: "Prompts are staged unsent — open each workspace in Skein and press Enter." Plus any manual follow-ups (failed assignments).
+Per workspace: WS, issue(s), workspace id, assignment and `on_launch` result, addendum used (and any layer it replaced). Then: "Prompts are staged unsent — open each workspace in Skein and press Enter." Plus any manual follow-ups (failed assignments).

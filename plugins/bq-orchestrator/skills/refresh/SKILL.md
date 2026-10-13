@@ -8,6 +8,7 @@ description: Use in an orchestrator workspace when the user says "refresh", "sta
 The standing status command. When the user says **refresh**, run the whole sequence and report — no other prompting. References:
 - Plan format: `${CLAUDE_SKILL_DIR}/../../references/plan-format.md`
 - Trackers: `${CLAUDE_SKILL_DIR}/../../references/trackers.md`
+- Config (front matter > domain file > defaults): `${CLAUDE_SKILL_DIR}/../../references/config.md`
 
 If there's no `execution-plan.md` with `orchestrator: bq-orchestrator` front matter, stop and suggest `/bq-orchestrator:enable-orchestrator`.
 
@@ -23,12 +24,12 @@ Always compare against `origin/<base_branch>` — a local base branch lags in a 
 
 ## 2. Gather (in parallel where you can)
 
-For every workspace row that isn't `proposed` or archived:
+For every workspace row that isn't `proposed` or archived (`in flight · owned by <old plan>` rows included: track them, never launch them):
 
 - **skein** — `skein list --project <skein_project> --json` once; match rows by workspace id or linked issue. `skein pr <ws> --refresh --json` for each live one.
 - **GitHub** — for each PR: `gh pr view <N> --json state,mergedAt,reviewDecision,isDraft,url,title` and `gh pr checks <N> --json name,bucket`. Count unresolved review threads if `bq-code` is installed (`pr-feedback.sh` from its address-pr-feedback skill), otherwise via `gh api graphql` on `reviewThreads { isResolved }`. Pending checks are pending, never green.
-- **Trackers** — for each issue id, read status and assignee per trackers.md.
-- **Repo** — `gh pr list --state open --json number,title,author,headRefName` for PRs touching the plan's seams that aren't ours (other people's work that will collide).
+- **Trackers** — for each issue id, read status, assignee and sprint/cycle per trackers.md.
+- **Repo** — `gh pr list --state open --json number,title,author,headRefName,files` once. For each plan PR, intersect its files (`gh pr view <N> --json files`) with the open PRs that aren't in the plan, and note each shared file and PR. Also note PRs outside the plan that touch the plan's seams.
 
 ## 3. Update the plan
 
@@ -40,7 +41,8 @@ Short, in this order:
 1. **Landed** — what merged since the last refresh (from step 1 and PR states).
 2. **In flight** — per workspace: PR, checks (green / N failing / N pending), unresolved threads, review decision. Flag a workspace that's been idle with no PR.
 3. **Blocked / needs you** — red checks with no activity, `CHANGES_REQUESTED`, decisions awaiting the user, merge conflicts, dependencies that landed (so a blocked row is now launchable).
-4. **Mismatches** — tracker status contradicting the PR (merged but "In Progress", unassigned but launched), and any issue description now stale against what actually shipped.
+4. **Mismatches** — tracker status contradicting the PR (merged but "In Progress", unassigned but launched), and any issue description now stale against what actually shipped. Also files shared with open PRs outside the plan.
+   - **For information only:** an issue whose sprint/cycle/milestone differs from the plan's `on_launch` value. It may have moved on purpose; never change it back.
 5. **Next** — what to launch next (unblocked `proposed` rows by priority), PRs that look ready for `/bq-orchestrator:review`, and merged workspaces ready for `/bq-orchestrator:archive`.
 
 Keep it to what changed, what is blocked, what to start next.

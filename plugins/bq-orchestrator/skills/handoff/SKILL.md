@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Use in an orchestrator workspace when one plan's round is finishing and the next begins — "hand off to a new orchestrator", "start the next round", "carry the open items over", "seed a new plan from this one", or when continuing from a predecessor orchestrator ("pick up where affable-pickle left off"). Writes a handoff summary, seeds the successor plan with carry-over items, and links the two plans.
+description: Use in an orchestrator workspace when one plan's round is finishing and the next begins — "hand off to a new orchestrator", "start the next round", "carry the open items over", "seed a new plan from this one", or when continuing from a predecessor orchestrator ("pick up where <old worktree> left off"). Writes a handoff summary, seeds the successor plan with carry-over items, and links the two plans.
 argument-hint: "[successor worktree | predecessor worktree]"
 ---
 
@@ -21,7 +21,7 @@ The handoff must start from current state. Run the `/bq-orchestrator:refresh` se
 ## 2. Collect carry-over
 
 From the old plan:
-- Rows not `✅ merged` — still `proposed`, launched, or in PR. In-flight ones stay owned by their existing workspaces; carry them as "in flight, from <old plan>", not as new work.
+- Rows not `✅ merged` — still `proposed`, launched, or in PR. In-flight ones stay owned by their existing workspaces: carry them as rows, not new work (see step 4).
 - Backlog items, follow-ups filed during the round, unticketed findings, and decisions still awaiting the user.
 - Context and rules the new round must not violate.
 
@@ -31,7 +31,9 @@ In the old worktree, `handoff.md` (append if it exists): what shipped (PRs), wha
 
 ## 4. Seed the successor plan
 
-If the successor worktree has no `execution-plan.md`: write one per plan-format.md with `predecessor: <old worktree>` and the old header's skein project, tracker, assignee, and Airtable settings. Carry-over rows keep their WS labels; new rows continue the label sequence. If the successor already has a plan, merge the carry-over into it without duplicating rows (match on issue ids).
+If the successor worktree has no `execution-plan.md`: write one per plan-format.md with `predecessor: <old worktree>` and the old header's skein project, tracker, assignee, tracker settings and `review:` (keys the domain file already supplies can be left out). Carry-over rows keep their WS labels, Issues, Seam and Depends on; new rows continue the label sequence.
+- Not-started rows (`proposed`, `⏸ blocked`) carry with their State and `### <WS>` notes as they are. The successor launches them.
+- In-flight rows (launched or in PR) carry with State `in flight · owned by <old plan>` (`<old plan>` = the old orchestrator's worktree name), keeping the `ws <id>`, `PR #N` and `· session <name>` parts. The successor's `refresh` tracks them to merge, and its `launch` refuses them. If the successor already has a plan, merge the carry-over into it without duplicating rows (match on issue ids).
 
 If the successor worktree doesn't exist yet, offer to create it as a skein workspace: `skein new --project <skein_project> --name "<next round title>" --prompt "/bq-orchestrator:handoff <old worktree>"` — then the user runs that prompt there (incoming direction).
 

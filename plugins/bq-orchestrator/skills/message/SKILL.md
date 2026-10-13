@@ -1,6 +1,6 @@
 ---
 name: message
-description: Use in an orchestrator workspace when the user wants to tell a launched workspace something — "send this to I", "tell J about the bug we found", "let K know M merged and it should rebase", "pass this finding to the workspace on O5326", "tell everyone touching the action bar …". Resolves plan workspaces to their live Claude sessions and delivers the message; falls back to paste-ready text when no session is live. Also used by review to deliver findings.
+description: Use in an orchestrator workspace when the user wants to tell a launched workspace something — "send this to I", "tell J about the bug we found", "let K know M merged and it should rebase", "pass this finding to the workspace on T5326", "tell everyone touching the action bar …". Resolves plan workspaces to their live Claude sessions and delivers the message; falls back to paste-ready text when no session is live. Also used by review to deliver findings.
 argument-hint: "<WS label(s) | issue id | all-in-flight | seam> <message>"
 ---
 
@@ -15,18 +15,23 @@ Delivery uses Claude Code's local session messaging: **ListAgents** (lists peer 
 From `$ARGUMENTS`, the targets are one of:
 - WS labels (`I`, `J K`) or issue ids → those plan rows;
 - `all-in-flight` → every row in launched or PR state;
-- a seam or file ("everyone touching the WO action bar") → rows whose Seam, notes, or Collisions bullets match. Show the resolved list before sending.
+- a seam or file ("everyone touching the checkout action bar") → rows whose Seam, notes, or Collisions bullets match. Show the resolved list before sending.
 
 For each row, find its session:
-1. Workspace id from the row's State (`ws <id>`), else match the row's issue id against `skein list --project <skein_project> --json` (`linked_issue`).
-2. `skein status <id> --json` → the worktree path. Its basename is the worktree name.
-3. **ListAgents** → the peer session whose name is `<worktree name>` or starts with `<worktree name>-`. Several matches → prefer one that isn't idle, else the most recently started, and say which you chose. Never pick this session (it's the orchestrator).
+1. **Recorded session.** If the row's State has `· session <name>` and **ListAgents** still lists that name, use it and skip the rest.
+2. Workspace id from the row's State (`ws <id>`), else match the row's issue id against `skein list --project <skein_project> --json` (`linked_issue`).
+3. `skein status <id> --json` gives the worktree path. Its basename is the worktree name.
+4. **ListAgents**, then match. Claude Code truncates long worktree names and appends a 2-hex suffix (worktree `ab-123-offline-outbox-replay-under-load`, session `ab-123-offline-outbox-replay-u-9e`). So strip one trailing `-[0-9a-f]{2}` from each session name, and a session matches when either name is a prefix of the other. Never pick this session (it's the orchestrator).
+   - One match → use it.
+   - Several matches → don't guess. Ask the user which one, listing each name and whether it's idle.
+
+After the first successful send to a row, append `· session <name>` to its State (replacing an older one) so the next send goes straight there.
 
 A row that's `proposed` has no workspace — say so and suggest adding the note to its `### <WS>` section so `launch` carries it.
 
 ## 2. Compose
 
-The user's words are often terse ("tell I the formHref helper should live in `@aldoa/forms`"). Expand to a self-contained message the implementer can act on without this conversation:
+The user's words are often terse ("tell I the cartUrl helper should live in the shared utils package"). Expand to a self-contained message the implementer can act on without this conversation:
 
 ```
 From the orchestrator (<orchestrator session name>) — plan "<title>", workspace <WS>:
