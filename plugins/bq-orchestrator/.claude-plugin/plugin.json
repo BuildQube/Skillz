@@ -1,6 +1,6 @@
 {
   "name": "bq-orchestrator",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Run a skein workspace as an orchestrator — plan work in execution-plan.md, launch implementer workspaces with a standard prompt, refresh status across GitHub, trackers and skein",
   "author": {
     "name": "BuildQube"
