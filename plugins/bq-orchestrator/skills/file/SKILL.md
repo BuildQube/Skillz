@@ -77,7 +77,7 @@ A failure doesn't stop the batch: collect it for the report.
 ## 6. Record in the plan
 
 Per ticket filed or added to:
-- By default, add a row to `## Backlog` (format in plan-format.md): the id linked to its URL, a short summary, priority/size, and where it came from.
+- By default, add a row to `## Backlog`: the id linked to its URL, a short summary, priority/size, and where it came from. If `## Backlog` already has a table, add the row in that table's columns: map those values onto the closest columns and put whatever doesn't fit in a notes-like column. Use the four-column layout from plan-format.md only when there's no table yet. Never rewrite the existing table.
 - If the user says it belongs to a workspace row, add the id to that row's Issues and a line to its `### <WS>` notes instead. When that row is already launched, offer to tell the workspace with `/bq-orchestrator:message`.
 - Add one `## Log` line per batch: `<date> — filed T5401, T5402 (from review of K, PR #380)`.
 

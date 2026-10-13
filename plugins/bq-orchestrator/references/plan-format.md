@@ -89,7 +89,7 @@ Anything under `### <WS> — …` is passed into that workspace's prompt verbati
 
 ### Backlog
 
-Tickets filed but not launched. `/bq-orchestrator:file` adds one row per ticket: the id linked to its URL, a short summary, priority and size (when the tracker has one), and where it came from. A ticket that belongs to a workspace goes on that row's Issues and `### <WS>` notes instead. To launch a backlog ticket, add it to a Workspaces row first.
+Tickets filed but not launched. `/bq-orchestrator:file` adds one row per ticket: the id linked to its URL, a short summary, priority and size (when the tracker has one), and where it came from. When the section already has a table (migrated plans often use other columns, e.g. `Ticket | Size | Notes`), the row follows that table's columns: values go in the closest columns, and whatever doesn't fit goes in a notes-like column. The table above is used only when there's no table yet. The existing table is never rewritten. A ticket that belongs to a workspace goes on that row's Issues and `### <WS>` notes instead. To launch a backlog ticket, add it to a Workspaces row first.
 
 ## Migrating an existing plan
 
