@@ -45,6 +45,8 @@ skein move <child id> [<child id> ...] --parent <successor id> --json
 
 Run in either direction, whichever side first has both ids. Children already under the successor are fine to pass again. On an older skein, or if an id doesn't resolve, skip this and say so; the rows still carry as `in flight · owned by <old plan>`.
 
+**Redirect their questions.** In-flight workspaces were told to send questions to the old orchestrator. Once the successor exists, use `/bq-orchestrator:message all-in-flight` to tell each one that the orchestrator is now worktree `<successor worktree>` (skein workspace <successor id>) and that questions go there from now on. Log it in both plans.
+
 ## 5. Close the old plan
 
 Set the old plan's front matter `status: superseded` and `successor: <new worktree>`, and add a `## Log` line. A superseded plan no longer triggers orchestrator mode in its worktree. Suggest `/bq-orchestrator:archive` for its merged workspaces.
