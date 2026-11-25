@@ -105,6 +105,14 @@ Unknown keys are kept and ignored. Later skills add their own top-level section 
 - **`<tracker>.on_launch`**: see "Assign at START" in trackers.md. A sprint or cycle can move after launch (re-planning, carry-over). `refresh` reports one that differs from the plan's as information and never changes it back.
 - **`airtable.issue_pattern` / `issue_lookup`**: see "Finding a record" in trackers.md.
 - **`launch.submit`**: `true` makes `launch` (and `handoff`'s successor suggestion) pass `--submit` to `skein new`, so the prompt is sent once claude is ready in the workspace instead of being staged unsent. If skein doesn't detect claude's prompt, it stays staged. Needs skein ≥ 0.6.0.
+- **Parent workspaces** (not a key; it depends on the skein version). On skein ≥ 0.56.1 (`skein --version`), the plan's workspaces are skein **children** of the orchestrator's own workspace:
+  - **Orchestrator id**: the row in `skein list --project <skein_project> --json` whose `worktree_path` equals `git rev-parse --show-toplevel`. Resolve it once per run. Not found → behave as on an older skein.
+  - `launch` passes `--parent <orchestrator id>` to every `skein new`. A child is never implied.
+  - `refresh`, `review`, `message` and `archive` find the plan's workspaces with `skein list --parent <orchestrator id> --json` first, then fall back to the workspace id or issue-id matching for rows launched before this (no parent, or launched by a predecessor).
+  - `handoff` moves the open children under the successor: `skein move <ids> --parent <successor id>`.
+  - Skein allows one level, in one project. Archiving a parent promotes its open children to top level; the plugin never archives the orchestrator and never passes `--with-children`.
+
+  On an older skein, or when the orchestrator id can't be resolved, leave out `--parent`, `--parent` listing and `skein move`, and match by workspace id or issue id as before.
 - **`review.correctness_agent`**: the bug-hunting pass in `review`. `/code-review` is the built-in skill. Any other value is an agent type run with the Agent tool. `review` gives it the plan row, the plan's Context and the previous round's findings.
 - **`review.findings`**: `ask` shows you the ranked findings and a recommended fix list and sends only what you approve. `auto` sends blocking and non-blocking findings to the workspace without asking.
 - **`review.expected_reviewers`**: after checks finish, `review` warns when one of these logins posted nothing on the PR's head commit. That catches a review bot that silently skipped a PR.

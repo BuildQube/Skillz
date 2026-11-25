@@ -24,6 +24,8 @@ Dependencies are installed with it: `bq-code` (this marketplace), `skein@skein-m
 | `/bq-orchestrator:archive [WS…]` | Archive the skein workspaces whose PRs merged. Never uses `--force`. |
 | `/bq-orchestrator:handoff [worktree]` | Carry a finished round's open items into a successor plan, and link the two. In-flight rows carry over as tracked rows owned by the old plan, so they are never re-launched. |
 
+On skein ≥ 0.56.1, launched workspaces are skein children of the orchestrator's workspace (`skein new --parent`), so they group under it in Skein, the skills find them with `skein list --parent`, and `handoff` moves the open ones under the successor (`skein move`). Older skein versions keep the previous behavior, and rows launched before this are still matched by workspace or issue id. See "Parent workspaces" in [references/config.md](references/config.md).
+
 Messaging uses Claude Code's local session messaging (`ListAgents`/`SendMessage`), so the workspace must have a live `claude` session on the same machine.
 
 A SessionStart hook re-applies orchestrator mode in any session that opens in a worktree whose `execution-plan.md` has `orchestrator: bq-orchestrator` front matter and isn't superseded.

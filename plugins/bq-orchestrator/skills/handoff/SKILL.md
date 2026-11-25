@@ -35,7 +35,15 @@ If the successor worktree has no `execution-plan.md`: write one per plan-format.
 - Not-started rows (`proposed`, `⏸ blocked`) carry with their State and `### <WS>` notes as they are. The successor launches them.
 - In-flight rows (launched or in PR) carry with State `in flight · owned by <old plan>` (`<old plan>` = the old orchestrator's worktree name), keeping the `ws <id>`, `PR #N` and `· session <name>` parts. The successor's `refresh` tracks them to merge, and its `launch` refuses them. If the successor already has a plan, merge the carry-over into it without duplicating rows (match on issue ids).
 
-If the successor worktree doesn't exist yet, offer to create it as a skein workspace: `skein new --project <skein_project> --name "<next round title>" --prompt "/bq-orchestrator:handoff <old worktree>"` (plus `--submit` when `launch.submit` is true) — then that prompt runs there (the user presses Enter, or skein sends it with `--submit`), in the incoming direction.
+If the successor worktree doesn't exist yet, offer to create it as a skein workspace: `skein new --project <skein_project> --name "<next round title>" --prompt "/bq-orchestrator:handoff <old worktree>"` (plus `--submit` when `launch.submit` is true) — then that prompt runs there (the user presses Enter, or skein sends it with `--submit`), in the incoming direction. Create it top-level: never `--parent` (skein allows one level, and children hang off orchestrators).
+
+**Move the children** (skein ≥ 0.56.1, see "Parent workspaces" in config.md). Once the successor workspace exists, resolve the old orchestrator's id and the successor's id (its row in `skein list --project <skein_project> --json` by `worktree_path`, or the id `skein new` printed). List the old orchestrator's children with `skein list --parent <old id> --json` and move the open ones (not archived) under the successor:
+
+```bash
+skein move <child id> [<child id> ...] --parent <successor id> --json
+```
+
+Run in either direction, whichever side first has both ids. Children already under the successor are fine to pass again. On an older skein, or if an id doesn't resolve, skip this and say so; the rows still carry as `in flight · owned by <old plan>`.
 
 ## 5. Close the old plan
 

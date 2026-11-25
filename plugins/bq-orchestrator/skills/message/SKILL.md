@@ -19,7 +19,7 @@ From `$ARGUMENTS`, the targets are one of:
 
 For each row, find its session:
 1. **Recorded session.** If the row's State has `· session <name>` and **ListAgents** still lists that name, use it and skip the rest.
-2. Workspace id from the row's State (`ws <id>`), else match the row's issue id against `skein list --project <skein_project> --json` (`linked_issue`).
+2. Workspace id from the row's State (`ws <id>`), else match the row's issue id (`linked_issue`) against `skein list --parent <orchestrator id> --json` (skein ≥ 0.56.1, "Parent workspaces" in config.md), falling back to `skein list --project <skein_project> --json` for rows launched before parents.
 3. `skein status <id> --json` gives the worktree path. Its basename is the worktree name.
 4. **ListAgents**, then match. Claude Code truncates long worktree names and appends a 2-hex suffix (worktree `ab-123-offline-outbox-replay-under-load`, session `ab-123-offline-outbox-replay-u-9e`). So strip one trailing `-[0-9a-f]{2}` from each session name. A session matches when its stripped name equals the worktree name or is a prefix of it — never the reverse: a stem longer than the worktree name (`json-composite-types-v2` for worktree `json-composite-types`) belongs to a different worktree. A stem much shorter than the worktree name is suspicious; ask before sending. Never pick this session (it's the orchestrator).
    - One match → use it.
