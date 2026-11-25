@@ -34,9 +34,16 @@ Neighbors — other workspaces touching nearby code; don't step on them:
 
 <If several issues:> These ship as ONE PR covering <ids>.
 <If base_branch is not the default or the workspace is stacked:> Base your PR on <branch>.
+
+ORCHESTRATOR — questions go here, not to the user:
+- This workspace was launched by the orchestrator in worktree `<orchestrator worktree name>` (skein workspace <orchestrator id>). It owns the plan and talks to the user.
+- Send every question, decision you need, blocker, scope doubt, or conflict with a neighbor to it with SendMessage. Find its session with ListAgents: the name is the worktree name, possibly cut short, plus a `-xx` hex suffix. A later message from a different orchestrator replaces this one.
+- Don't ask the user (no AskUserQuestion) and don't stop to wait for one. Say what you need and your recommended answer, keep working on what isn't blocked, and use the orchestrator's reply.
+- If no orchestrator session is listed, keep going on your recommended answer and put the open question in the PR body under "Questions for the orchestrator".
+- If the user types to you directly in this workspace, do what they say and tell the orchestrator what changed.
 ```
 
-Keep it tight. The workspace agent can read the issue itself; give it the decisions and constraints it can't discover.
+Keep it tight. The ORCHESTRATOR block is always included, filled in, whatever the addendum says. The workspace agent can read the issue itself; give it the decisions and constraints it can't discover.
 
 ## 2. Quality bar (verbatim)
 

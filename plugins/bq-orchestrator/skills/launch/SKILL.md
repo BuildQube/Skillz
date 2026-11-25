@@ -45,9 +45,10 @@ Show the user the Task layer (the part that varies) for each workspace and proce
 ## 4. Create the workspace
 
 ```bash
-skein new --project <skein_project> --issue '<primary id>' [--issue '<extra id>' ...] --prompt "$(cat .orchestrator/prompts/<WS>.md)" [--submit]
+skein new --project <skein_project> --issue '<primary id>' [--issue '<extra id>' ...] --prompt "$(cat .orchestrator/prompts/<WS>.md)" [--parent <orchestrator id>] [--submit]
 ```
 
+- `--parent <orchestrator id>` on every launch when skein ≥ 0.56.1 and the orchestrator id resolves ("Parent workspaces" in config.md), so the workspace is a skein child of this orchestrator. Otherwise leave it out.
 - `--submit` only when `launch.submit` is true (config.md; needs skein ≥ 0.6.0).
 - The first `--issue` is the primary (names the branch). Order the row's ids by priority.
 - No ids → `--name "<WS> <short summary>"` instead of `--issue`.

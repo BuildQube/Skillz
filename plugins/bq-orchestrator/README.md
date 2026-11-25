@@ -24,6 +24,8 @@ Dependencies are installed with it: `bq-code` (this marketplace), `skein@skein-m
 | `/bq-orchestrator:archive [WS…]` | Archive the skein workspaces whose PRs merged. Never uses `--force`. |
 | `/bq-orchestrator:handoff [worktree]` | Carry a finished round's open items into a successor plan, and link the two. In-flight rows carry over as tracked rows owned by the old plan, so they are never re-launched. |
 
+On skein ≥ 0.56.1, launched workspaces are skein children of the orchestrator's workspace (`skein new --parent`), so they group under it in Skein, the skills find them with `skein list --parent`, and `handoff` moves the open ones under the successor (`skein move`). Older skein versions keep the previous behavior, and rows launched before this are still matched by workspace or issue id. See "Parent workspaces" in [references/config.md](references/config.md).
+
 Messaging uses Claude Code's local session messaging (`ListAgents`/`SendMessage`), so the workspace must have a live `claude` session on the same machine.
 
 A SessionStart hook re-applies orchestrator mode in any session that opens in a worktree whose `execution-plan.md` has `orchestrator: bq-orchestrator` front matter and isn't superseded.
@@ -32,7 +34,7 @@ A SessionStart hook re-applies orchestrator mode in any session that opens in a 
 
 Every launched workspace gets four layers (see [references/workspace-prompt.md](references/workspace-prompt.md)):
 
-1. **Task:** generated from the plan row: issues, context, notes, dependencies, and neighboring workspaces.
+1. **Task:** generated from the plan row: issues, context, notes, dependencies, and neighboring workspaces. It always ends with an **Orchestrator** block that sends the workspace's questions, blockers and decisions to the orchestrator session (via `SendMessage`) instead of the user. The orchestrator answers from the plan or asks you, and `handoff` points in-flight workspaces at the successor.
 2. **Quality bar:** ponytail mode, strict DRY, tests that fail when you revert the fix, and a `/simplify` plus `/ponytail:ponytail-review` pass before the PR.
 3. **Landing the work:** commit as you go, open the PR, wait for checks to finish, then loop `/bq-code:address-pr-feedback` until green and every thread is resolved.
 4. **Repo addendum:** the repo's commit, PR-title and PR-body conventions. The first file found is used, in this order: `workspace-prompt-addendum.md` in the orchestrator worktree (untracked, the default), then `.claude/workspace-prompt.md` committed in the repo, then `~/.claude/bq-orchestrator/<repo>.md`.

@@ -26,7 +26,7 @@ Always compare against `origin/<base_branch>` — a local base branch lags in a 
 
 For every workspace row that isn't `proposed` or archived (`in flight · owned by <old plan>` rows included: track them, never launch them):
 
-- **skein** — `skein list --project <skein_project> --json` once; match rows by workspace id or linked issue. `skein pr <ws> --refresh --json` for each live one.
+- **skein** — on skein ≥ 0.56.1, `skein list --parent <orchestrator id> --json` once ("Parent workspaces" in config.md) and match rows by workspace id or linked issue. For rows it doesn't cover (launched before parents, or owned by a predecessor), or on an older skein, `skein list --project <skein_project> --json` once and match the same way. `skein pr <ws> --refresh --json` for each live one.
 - **GitHub** — for each PR: `gh pr view <N> --json state,mergedAt,reviewDecision,isDraft,url,title` and `gh pr checks <N> --json name,bucket`. Count unresolved review threads if `bq-code` is installed (`pr-feedback.sh` from its address-pr-feedback skill), otherwise via `gh api graphql` on `reviewThreads { isResolved }`. Pending checks are pending, never green.
 - **Trackers** — for each issue id, read status, assignee and sprint/cycle per trackers.md.
 - **Repo** — `gh pr list --state open --json number,title,author,headRefName,files` once. For each plan PR, intersect its files (`gh pr view <N> --json files`) with the open PRs that aren't in the plan, and note each shared file and PR. Also note PRs outside the plan that touch the plan's seams.

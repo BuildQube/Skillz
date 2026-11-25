@@ -13,7 +13,7 @@ Status → review → (maybe) merge for the plan's open PRs. The orchestrator st
 
 ## 0. Scope and merge authority
 
-- Rows: WS labels from `$ARGUMENTS`, else every row in PR state (`all-open`). Find each row's PR from its State or `skein pr <ws> --refresh --json`; a launched row with no PR yet → report "no PR yet" and skip.
+- Rows: WS labels from `$ARGUMENTS`, else every row in PR state (`all-open`). Find each row's PR from its State or `skein pr <ws> --refresh --json`, taking `<ws>` from the row's `ws <id>`, else `skein list --parent <orchestrator id> --json` (skein ≥ 0.56.1, "Parent workspaces" in config.md), else issue-id matching in `skein list --project <skein_project> --json`; a launched row with no PR yet → report "no PR yet" and skip.
 - **Merge authority:** merging is allowed only if the user's request asks for it ("merge", "merge if good", "ship the clean ones"). Then that request is approval for every PR that passes the gate below — no per-PR question. Without it, review only, and end by offering to merge the ones that passed. Never merge a PR that fails the gate, whatever was asked.
 
 ## 1. Status (per PR)
